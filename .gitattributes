@@ -1,0 +1,5 @@
+# later rules override previous ones
+* text=auto
+
+*.sln  eol=crlf
+*.sh   eol=lf

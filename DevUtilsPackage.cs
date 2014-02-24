@@ -148,27 +148,29 @@ namespace VSPackage.DevUtils
 				return;
 			}
 
+			// get current configuration
+			Project p = doc.ProjectItem.ContainingProject;
+			ConfigurationManager mgr = p.ConfigurationManager;
+			string platform = mgr.ActiveConfiguration.PlatformName;
+			string conf = mgr.ActiveConfiguration.ConfigurationName;
+
 /*
 			VCProjectItem docItem = doc.ProjectItem.Object as VCProjectItem;
 			IVCCollection prjconfigs = prj.Configurations;
-			VCConfiguration prjconfig = prjconfigs.Item("Release|x64") as VCConfiguration;
+			VCConfiguration prjconfig = prjconfigs.Item(conf + "|" + platform) as VCConfiguration;
 			VCCLCompilerTool prjtool = prjconfig.Tools.Item("VCCLCompilerTool") as VCCLCompilerTool;
  */
 
 			// save the project file
 			//prj.save();
 
-			// TODO: handle arbitrary configs like RelWithDebInfo
-			// TODO: at least for preprocessed we want to use the current solution configuration
-			// TODO: find release versions by looking for optimization flags rather than name
 			SolutionBuild sb = dte.Solution.SolutionBuild;
 			string acc = sb.ActiveConfiguration.Name;
 
-			// find the configuration for the current file
-//			VCFile file                    = prj.Files.Item(doc.Name) as VCFile;
+			// find the currently active configuration for the current file
 			VCFile file                    = doc.ProjectItem.Object as VCFile;
 			IVCCollection fileconfigs      = file.FileConfigurations as IVCCollection;
-			VCFileConfiguration fileconfig = fileconfigs.Item("Release|x64") as VCFileConfiguration;
+			VCFileConfiguration fileconfig = fileconfigs.Item(conf + "|" + platform) as VCFileConfiguration;
 			VCCLCompilerTool tool          = fileconfig.Tool;
 
 			// save original settings
@@ -181,9 +183,6 @@ namespace VSPackage.DevUtils
 //			dte.UndoContext.Open("ModifiedProjectSettings");
 
 			string generatedFile;
-
-//			try
-//			{
 			if (mode == 1)
 			{
 				// asmListingAsmSrc => '.asm'
@@ -211,7 +210,7 @@ namespace VSPackage.DevUtils
 			}
 			catch (Exception e)
 			{
-				showMsgBox("Compilation failed, this means there are errors in the code or your current configuration is not Release|x64:\n" + e.Message);
+				showMsgBox("Compilation failed, this means there are errors in the code:\n" + e.Message);
 				return;
 			}
 			finally
@@ -233,6 +232,10 @@ namespace VSPackage.DevUtils
 				// naive cleanup
 				if (mode == 1)
 				{
+					// switch back to prior config
+//					if (conf != "Release")
+//						sb.SolutionConfigurations.Item(conf).Activate();
+
 					tool.WholeProgramOptimization = lto;
 					tool.AssemblerOutput = asmtype;
 					tool.AssemblerListingLocation = asmloc;

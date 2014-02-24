@@ -20,3 +20,33 @@ Known issues
 - Currently uses Release|x64 hard-coded.
 - It does undo the changes to the compile options afterwards but the project file will still have a new empty entry for that file added if you save it.
 - https://connect.microsoft.com/VisualStudio/feedback/details/809115/vcfileconfiguration-compile-only-works-with-the-currently-active-configuration
+
+
+TODO
+----
+- RunToCursor functionality with ignoring breakpoints
+
+
+    Dim bptStates(DTE.Debugger.Breakpoints.Count - 1) As Boolean
+
+
+    Dim i = 0
+    For Each bpt As Breakpoint In DTE.Debugger.Breakpoints
+        bptStates(i) = bpt.Enabled
+        i += 1
+        bpt.Enabled = False
+    Next
+
+    Try
+        DTE.Debugger.RunToCursor(True)
+        '       Catch ex As Exception
+    Finally
+        i = 0
+        For Each bpt As Breakpoint In DTE.Debugger.Breakpoints
+            bpt.Enabled = bptStates(i)
+            i += 1
+        Next
+    End Try
+	
+	
+	But for some reason the RunToCursor call doesn't work at all ("Operation not supported") and breakpoint states aren't properly reset either. Some are reactivated but not all. Any ideas?

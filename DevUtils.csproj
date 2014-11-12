@@ -123,6 +123,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BuildEventsHandler.cs" />
     <Compile Include="Guids.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="DevUtilsPackage.cs" />

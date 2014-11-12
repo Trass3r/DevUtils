@@ -40,9 +40,8 @@ namespace VSPackage.DevUtils
 	[Guid(GuidList.guidDevUtilsPkgString)]
 	public sealed class DevUtilsPackage : Package
 	{
-		// got to cache this object to get events
-		BuildEvents _buildEvents;
-		DateTime _buildStartTime;
+		BuildEventsHandler _buildEventsHandler;
+		DTE2 _dte;
 
 		/// <summary>
 		/// Default constructor of the package.
@@ -56,7 +55,11 @@ namespace VSPackage.DevUtils
 //			Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", this.ToString()));
 		}
 
-
+		/// get the DTE object for this package
+		public DTE2 dte
+		{
+			get { return _dte; }
+		}
 
 		/////////////////////////////////////////////////////////////////////////////
 		// Overridden Package Implementation
@@ -71,10 +74,8 @@ namespace VSPackage.DevUtils
 			Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
 			base.Initialize();
 
-			DTE2 dte = (DTE2)GetService(typeof(DTE));
-			_buildEvents = dte.Events.BuildEvents;
-			_buildEvents.OnBuildBegin += buildStarted;
-			_buildEvents.OnBuildDone += buildDone;
+			_dte = (DTE2)GetService(typeof(DTE));
+			_buildEventsHandler = new BuildEventsHandler(this);
 
 			// Add our command handlers for menu (commands must exist in the .vsct file)
 			OleMenuCommandService mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
@@ -91,23 +92,6 @@ namespace VSPackage.DevUtils
 			}
 		}
 		#endregion
-
-		private void buildStarted(vsBuildScope scope, vsBuildAction action)
-		{
-			if (scope != vsBuildScope.vsBuildScopeSolution)
-				return;
-
-			_buildStartTime = DateTime.Now;
-		}
-
-		private void buildDone(vsBuildScope scope, vsBuildAction action)
-		{
-			if (scope != vsBuildScope.vsBuildScopeSolution)
-				return;
-			string msg = String.Format("Total build time: {0}", DateTime.Now - _buildStartTime);
-			writeToBuildWindow("\n" + msg);
-			writeStatus(msg);
-		}
 
 		// callback: show assembly code for currently open source file
 		private void showAssembly(object sender, EventArgs e)
@@ -395,13 +379,13 @@ namespace VSPackage.DevUtils
 			                       out result);
 		}
 
-		private void writeStatus(string msg)
+		public void writeStatus(string msg)
 		{
 			IVsStatusbar sb = (IVsStatusbar) GetService(typeof(SVsStatusbar));
 			sb.SetColorText(msg, 0, 0);
 		}
 
-		private void writeToBuildWindow(string msg)
+		public void writeToBuildWindow(string msg)
 		{
 			DTE2 dte = (DTE2)GetService(typeof(DTE));
 			var win = dte.Windows.Item(EnvDTE.Constants.vsWindowKindOutput);

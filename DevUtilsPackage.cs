@@ -400,5 +400,23 @@ namespace VSPackage.DevUtils
 			IVsStatusbar sb = (IVsStatusbar) GetService(typeof(SVsStatusbar));
 			sb.SetColorText(msg, 0, 0);
 		}
+
+		private void writeToBuildWindow(string msg)
+		{
+			DTE2 dte = (DTE2)GetService(typeof(DTE));
+			var win = dte.Windows.Item(EnvDTE.Constants.vsWindowKindOutput);
+			var ow = win.Object as OutputWindow;
+			if (ow == null)
+				return;
+
+			foreach (OutputWindowPane owPane in ow.OutputWindowPanes)
+			{
+				if (owPane.Name == "Build")
+				{
+					owPane.OutputString(msg);
+					break;
+				}
+			}
+		}
 	}
 }

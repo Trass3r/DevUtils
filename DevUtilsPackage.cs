@@ -35,11 +35,15 @@ namespace VSPackage.DevUtils
 	[InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
 	// This attribute is needed to let the shell know that this package exposes some menus.
 	[ProvideMenuResource("Menus.ctmenu", 1)]
-	// automatic module initialization when opening a solution file, see Microsoft.VisualStudio.VSConstants.UICONTEXT
-//	[ProvideAutoLoad("D2567162-F94F-4091-8798-A096E61B8B50")]
+	// automatic module initialization when opening a solution file
+	[ProvideAutoLoad(UIContextGuids80.SolutionExists)]
 	[Guid(GuidList.guidDevUtilsPkgString)]
 	public sealed class DevUtilsPackage : Package
 	{
+		// got to cache this object to get events
+		BuildEvents _buildEvents;
+		DateTime _buildStartTime;
+
 		/// <summary>
 		/// Default constructor of the package.
 		/// Inside this method you can place any initialization code that does not require 
@@ -67,6 +71,11 @@ namespace VSPackage.DevUtils
 			Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
 			base.Initialize();
 
+			DTE2 dte = (DTE2)GetService(typeof(DTE));
+			_buildEvents = dte.Events.BuildEvents;
+			_buildEvents.OnBuildBegin += buildStarted;
+			_buildEvents.OnBuildDone += buildDone;
+
 			// Add our command handlers for menu (commands must exist in the .vsct file)
 			OleMenuCommandService mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
 			if (null != mcs)
@@ -82,6 +91,23 @@ namespace VSPackage.DevUtils
 			}
 		}
 		#endregion
+
+		private void buildStarted(vsBuildScope scope, vsBuildAction action)
+		{
+			if (scope != vsBuildScope.vsBuildScopeSolution)
+				return;
+
+			_buildStartTime = DateTime.Now;
+		}
+
+		private void buildDone(vsBuildScope scope, vsBuildAction action)
+		{
+			if (scope != vsBuildScope.vsBuildScopeSolution)
+				return;
+			string msg = String.Format("Total build time: {0}", DateTime.Now - _buildStartTime);
+			writeToBuildWindow("\n" + msg);
+			writeStatus(msg);
+		}
 
 		// callback: show assembly code for currently open source file
 		private void showAssembly(object sender, EventArgs e)

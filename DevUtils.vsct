@@ -76,6 +76,12 @@
 				</Strings>
 			</Button>
 
+			<Button guid="guidDevUtilsCmdSet" id="cmdShowIncludes" priority="0x0100" type="Button">
+				<Parent guid="guidDevUtilsCmdSet" id="MyMenuGroup" />
+				<Strings>
+					<ButtonText>Show Includes</ButtonText>
+				</Strings>
+			</Button>
 		</Buttons>
 
 		<!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -102,6 +108,8 @@
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
 			<IDSymbol name="cmdShowAssembly" value="0x0100" />
 			<IDSymbol name="cmdShowPreprocessed" value="0x0101" />
+			<IDSymbol name="cmdShowIncludes" value="0x0102" />
+
 		</GuidSymbol>
 
 

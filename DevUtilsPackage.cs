@@ -192,7 +192,7 @@ namespace VSPackage.DevUtils
 			// undo context doesn't seem to work for project settings
 //			dte.UndoContext.Open("ModifiedProjectSettings");
 
-			string generatedFile;
+			string generatedFile = "";
 			if (mode == 1)
 			{
 				// asmListingAsmSrc => '.asm'
@@ -202,7 +202,7 @@ namespace VSPackage.DevUtils
 				tool.AssemblerOutput = asmListingOption.asmListingAsmSrc;
 				tool.AssemblerListingLocation = generatedFile;
 			}
-			else /*if (mode == 2)*/
+			else if (mode == 2)
 			{
 				// not generally applicable
 				//generatedFile = prj.ProjectDirectory + prjconfig.IntermediateDirectory + Replace(file.Name, ".cpp", ".i");
@@ -211,6 +211,10 @@ namespace VSPackage.DevUtils
 				tool.GeneratePreprocessedFile = preprocessOption.preprocessYes;
 				// there's no separate option for this, so misuse /Fo
 				tool.ObjectFile = generatedFile;
+			}
+			else //if (mode == 3)
+			{
+				tool.ShowIncludes = true;
 			}
 
 			try
@@ -255,6 +259,8 @@ namespace VSPackage.DevUtils
 					tool.GeneratePreprocessedFile = preprocessOption.preprocessNo;
 					tool.ObjectFile = objFileLocation;
 				}
+				else if (mode == 3)
+					tool.ShowIncludes = false;
 			}
 /*
 			}

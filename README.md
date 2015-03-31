@@ -24,6 +24,10 @@ Known issues
 
 TODO
 ----
+- cleanup!
+- better methods for finding the correct spot in the generated file
+- prevent pollution of project file by finding a working undo mechanism
+- /showIncludes tree view
 - RunToCursor functionality with ignoring breakpoints
 
 

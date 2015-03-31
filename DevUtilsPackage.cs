@@ -74,6 +74,8 @@ namespace VSPackage.DevUtils
 			Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
 			base.Initialize();
 
+			TaskManager.initialize(this);
+
 			_dte = (DTE2)GetService(typeof(DTE));
 			_buildEventsHandler = new BuildEventsHandler(this);
 

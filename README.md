@@ -12,6 +12,9 @@ This is an extension that automates those tedious steps via convenient context m
 It is alpha quality but does its job.
 Should be used together with an assembler syntax highlighting extension like AsmHighlighter.
 
+Download
+--------
+https://visualstudiogallery.msdn.microsoft.com/62f485b0-b659-4852-8f39-885c20c9fcd1
 
 Known issues
 ------------

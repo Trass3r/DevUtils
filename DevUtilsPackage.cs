@@ -91,6 +91,10 @@ namespace VSPackage.DevUtils
 				menuCommandID = new CommandID(GuidList.guidDevUtilsCmdSet, (int)PkgCmdIDList.cmdShowPreprocessed);
 				menuItem = new MenuCommand(showPreprocessed, menuCommandID);
 				mcs.AddCommand(menuItem);
+
+				menuCommandID = new CommandID(GuidList.guidDevUtilsCmdSet, (int)PkgCmdIDList.cmdShowIncludes);
+				menuItem = new MenuCommand(showIncludes, menuCommandID);
+				mcs.AddCommand(menuItem);
 			}
 		}
 		#endregion
@@ -105,6 +109,12 @@ namespace VSPackage.DevUtils
 		private void showPreprocessed(object sender, EventArgs e)
 		{
 			doIt(2);
+		}
+
+		// callback: show includes tree
+		private void showIncludes(object sender, EventArgs e)
+		{
+			doIt(3);
 		}
 
 		// TODO: mode 1 is assembly, 2 is preprocessed
@@ -275,6 +285,9 @@ namespace VSPackage.DevUtils
 					dte.UndoContext.Close();
 			}
 */
+			// TODO:
+			if (mode == 3)
+				return;
 
 			// clean the preprocessed output
 			// TODO: do this in a better way

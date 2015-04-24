@@ -8,6 +8,6 @@ namespace VSPackage.DevUtils
     {
         public const uint cmdShowAssembly     = 0x100;
 		public const uint cmdShowPreprocessed = 0x101;
-
+		public const uint cmdShowIncludes     = 0x102;
     };
 }

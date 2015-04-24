@@ -26,6 +26,8 @@ namespace VSPackage.DevUtils
 			if (outputWindowPane == null)
 				return "";
 
+			outputWindowPane.Activate();
+
 			TextSelection selection = outputWindowPane.TextDocument.Selection;
 			selection.StartOfDocument(false);
 			selection.EndOfDocument(true);

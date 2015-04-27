@@ -20,9 +20,7 @@ Known issues
 ------------
 
 - Doesn't work with headers.
-- Currently uses Release|x64 hard-coded.
 - It does undo the changes to the compile options afterwards but the project file will still have a new empty entry for that file added if you save it.
-- https://connect.microsoft.com/VisualStudio/feedback/details/809115/vcfileconfiguration-compile-only-works-with-the-currently-active-configuration
 
 
 TODO

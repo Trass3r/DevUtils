@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
 	<Metadata>
-		<Identity Id="19b8a882-47f2-4fdd-a657-5f15a2c5ecae" Version="0.2.1" Language="en-US" Publisher="Andreas Hollandt" />
+		<Identity Id="19b8a882-47f2-4fdd-a657-5f15a2c5ecae" Version="0.3" Language="en-US" Publisher="Andreas Hollandt" />
 		<DisplayName>DevUtils</DisplayName>
 		<Description>quickly inspect assembly and preprocessor output</Description>
 		<MoreInfo>https://github.com/Trass3r/DevUtils</MoreInfo>

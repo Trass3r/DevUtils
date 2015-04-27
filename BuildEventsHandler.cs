@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace VSPackage.DevUtils
 {
-	class BuildEventsHandler
+	internal class BuildEventsHandler
 	{
 		DevUtilsPackage _vspkg;
 		// got to cache this object to get events

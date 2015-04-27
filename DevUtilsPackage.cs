@@ -38,10 +38,9 @@ namespace VSPackage.DevUtils
 	// automatic module initialization when opening a solution file
 	[ProvideAutoLoad(UIContextGuids80.SolutionExists)]
 	[Guid(GuidList.guidDevUtilsPkgString)]
-	public sealed class DevUtilsPackage : Package
+	internal sealed class DevUtilsPackage : Package
 	{
-		BuildEventsHandler _buildEventsHandler;
-		DTE2 _dte;
+		private BuildEventsHandler _buildEventsHandler;
 
 		/// <summary>
 		/// Default constructor of the package.
@@ -52,13 +51,14 @@ namespace VSPackage.DevUtils
 		/// </summary>
 		public DevUtilsPackage()
 		{
-//			Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", this.ToString()));
 		}
 
 		/// get the DTE object for this package
 		public DTE2 dte
 		{
-			get { return _dte; }
+			// retrieving it in Initialize is buggy cause the IDE might not be fully initialized then -.-
+			// and it's not worth the hassle registering for ready events
+			get { return (DTE2)GetService(typeof(DTE)); }
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,6 @@ namespace VSPackage.DevUtils
 			Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
 			base.Initialize();
 
-			_dte = (DTE2)GetService(typeof(DTE));
 			_buildEventsHandler = new BuildEventsHandler(this);
 
 			// Add our command handlers for menu (commands must exist in the .vsct file)
@@ -108,18 +107,18 @@ namespace VSPackage.DevUtils
 		// TODO: mode 1 is assembly, 2 is preprocessed
 		private void doIt(int mode = 1)
 		{
-			// use together with https://asmhighlighter.codeplex.com/releases
-
-			// retrieve it here since IDE might not be fully initialized when calling Initialize -.-
-			// and it' not worth the hassle registering for ready events
-			DTE2 dte = (DTE2)GetService(typeof(DTE));
-
 			// if in a header try to open the cpp file
 			switchToCppFile();
 
 			// get the currently active document from the IDE
 			Document doc = dte.ActiveDocument;
-			TextDocument tdoc = dte.ActiveDocument.Object("TextDocument") as TextDocument;
+			TextDocument tdoc = doc.Object("TextDocument") as TextDocument;
+
+			if (tdoc == null)
+			{
+				showMsgBox("Could not obtain the active TextDocument object");
+				return;
+			}
 
 			// get the name of the document (lower-case)
 			string docname = doc.Name.ToLower();
@@ -164,18 +163,8 @@ namespace VSPackage.DevUtils
 			string platform = mgr.ActiveConfiguration.PlatformName;
 			string conf = mgr.ActiveConfiguration.ConfigurationName;
 
-/*
-			VCProjectItem docItem = doc.ProjectItem.Object as VCProjectItem;
-			IVCCollection prjconfigs = prj.Configurations;
-			VCConfiguration prjconfig = prjconfigs.Item(conf + "|" + platform) as VCConfiguration;
-			VCCLCompilerTool prjtool = prjconfig.Tools.Item("VCCLCompilerTool") as VCCLCompilerTool;
- */
-
 			// save the project file
 			//prj.save();
-
-			SolutionBuild sb = dte.Solution.SolutionBuild;
-			string acc = sb.ActiveConfiguration.Name;
 
 			// find the currently active configuration for the current file
 			VCFile file                    = doc.ProjectItem.Object as VCFile;

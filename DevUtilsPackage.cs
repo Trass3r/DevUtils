@@ -198,10 +198,12 @@ namespace VSPackage.DevUtils
 			//prj.save();
 
 			// find the currently active configuration for the current file
-			VCFile file                    = doc.ProjectItem.Object as VCFile;
-			IVCCollection fileconfigs      = file.FileConfigurations as IVCCollection;
-			VCFileConfiguration fileconfig = fileconfigs.Item(conf + "|" + platform) as VCFileConfiguration;
-			VCCLCompilerTool tool          = fileconfig.Tool;
+			// don't use SolutionBuild as there may be mixed platforms
+			// use late binding for version independence
+			dynamic file = doc.ProjectItem.Object;                        // as VCFile
+			dynamic fileconfigs = file.FileConfigurations;                // as IVCCollection
+			dynamic fileconfig = fileconfigs.Item(conf + "|" + platform); // as VCFileConfiguration
+			dynamic tool = fileconfig.Tool;                               // VCCLCompilerTool
 
 			// save original settings
 			bool lto                 = tool.WholeProgramOptimization;

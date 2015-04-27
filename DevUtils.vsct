@@ -63,6 +63,7 @@
 			<Button guid="guidDevUtilsCmdSet" id="cmdShowAssembly" priority="0x0100" type="Button">
 				<Parent guid="guidDevUtilsCmdSet" id="MyMenuGroup" />
 				<Icon guid="guidImages" id="asmListingPic" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
 				<Strings>
 					<ButtonText>Show Assembly</ButtonText>
 				</Strings>
@@ -71,6 +72,7 @@
 			<Button guid="guidDevUtilsCmdSet" id="cmdShowPreprocessed" priority="0x0100" type="Button">
 				<Parent guid="guidDevUtilsCmdSet" id="MyMenuGroup" />
 				<Icon guid="guidImages" id="preprocPic" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
 				<Strings>
 					<ButtonText>Show Preprocessed</ButtonText>
 				</Strings>

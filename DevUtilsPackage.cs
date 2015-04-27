@@ -82,15 +82,54 @@ namespace VSPackage.DevUtils
 			{
 				// Create the command for the menu item.
 				CommandID menuCommandID = new CommandID(GuidList.guidDevUtilsCmdSet, (int)PkgCmdIDList.cmdShowAssembly);
-				MenuCommand menuItem = new MenuCommand(showAssembly, menuCommandID);
-				mcs.AddCommand(menuItem);
+				var cmd = new OleMenuCommand(showAssembly, changeHandler, beforeQueryStatus, menuCommandID);
+				mcs.AddCommand(cmd);
 
 				menuCommandID = new CommandID(GuidList.guidDevUtilsCmdSet, (int)PkgCmdIDList.cmdShowPreprocessed);
-				menuItem = new MenuCommand(showPreprocessed, menuCommandID);
-				mcs.AddCommand(menuItem);
+
+				cmd = new OleMenuCommand(showPreprocessed, changeHandler, beforeQueryStatus, menuCommandID);
+				mcs.AddCommand(cmd);
 			}
 		}
 		#endregion
+
+		private void changeHandler(object sender, EventArgs e)
+		{
+		}
+
+		/// called when the context menu is opened
+		///
+		/// makes entries only visible if the document is actually C++
+		/// but enable it only if it's part of a project
+		private void beforeQueryStatus(object sender, EventArgs e)
+		{
+			OleMenuCommand menuCommand = sender as OleMenuCommand;
+			if (menuCommand == null)
+				return;
+
+			// cases:
+			// normal .cpp in project
+			// external .cpp file => projectItem != null, projectItem.Object == null
+			// "Solution Files"   => projectItem.Object == null
+			// other file types like .txt or .cs
+
+			Document doc = dte.ActiveDocument;
+
+			bool enabled = false;
+			bool visible = true;
+
+			ProjectItem projectItem = doc != null ? doc.ProjectItem : null;
+			if (projectItem != null)
+			{
+				if (doc.Language != "C/C++")
+					visible = false;
+				else if (projectItem.Object != null && projectItem.ContainingProject != null)
+					enabled = projectItem.ContainingProject.Object != null;
+			}
+
+			menuCommand.Enabled = enabled;
+			menuCommand.Visible = visible;
+		}
 
 		// callback: show assembly code for currently open source file
 		private void showAssembly(object sender, EventArgs e)
@@ -148,14 +187,6 @@ namespace VSPackage.DevUtils
 			string curCodeLine = editPoint.GetLines(line, line + 1);
 			// TODO: comments are removed when preprocessing and thus can't find a line with comments
 
-			// get the project that contains this document
-			VCProject prj = doc.ProjectItem.ContainingProject.Object as VCProject;
-
-			if (prj == null)
-			{
-				showMsgBox("This file doesn't seem to be part of a VC++ project");
-				return;
-			}
 
 			// get current configuration
 			Project p = doc.ProjectItem.ContainingProject;

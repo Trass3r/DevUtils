@@ -11,8 +11,6 @@ using Microsoft.VisualStudio.Shell;
 
 using EnvDTE;
 using EnvDTE80;
-//using System.Windows.Forms;
-using Microsoft.VisualStudio.VCProjectEngine;
 using System.Text.RegularExpressions;
 
 namespace VSPackage.DevUtils
@@ -209,7 +207,8 @@ namespace VSPackage.DevUtils
 			// unload/reload the project may close all open files
 			// manipulating proj.Saved or .IsDirty does not work
 			bool lto                 = tool.WholeProgramOptimization;
-			asmListingOption asmtype = tool.AssemblerOutput;
+			dynamic asmtype          = tool.AssemblerOutput;
+			dynamic genPreprocessed  = tool.GeneratePreprocessedFile;
 			string asmloc            = tool.AssemblerListingLocation;
 			string objFileLocation   = tool.ObjectFile;
 
@@ -220,7 +219,7 @@ namespace VSPackage.DevUtils
 				generatedFile = System.IO.Path.GetTempFileName() + ".asm"; //System.IO.Path.GetTempPath
 
 				tool.WholeProgramOptimization = false;
-				tool.AssemblerOutput = asmListingOption.asmListingAsmSrc;
+				tool.AssemblerOutput = (dynamic)Enum.Parse(tool.AssemblerOutput.GetType(), "asmListingAsmSrc");
 				tool.AssemblerListingLocation = generatedFile;
 			}
 			else /*if (mode == 2)*/
@@ -229,7 +228,7 @@ namespace VSPackage.DevUtils
 				//generatedFile = prj.ProjectDirectory + prjconfig.IntermediateDirectory + Replace(file.Name, ".cpp", ".i");
 				generatedFile = System.IO.Path.GetTempFileName() + ".cpp";
 
-				tool.GeneratePreprocessedFile = preprocessOption.preprocessYes;
+				tool.GeneratePreprocessedFile = (dynamic)Enum.Parse(tool.GeneratePreprocessedFile.GetType(), "preprocessYes");
 				// there's no separate option for this, so misuse /Fo
 				tool.ObjectFile = generatedFile;
 			}
@@ -255,8 +254,8 @@ namespace VSPackage.DevUtils
 				}
 				else if (mode == 2)
 				{
-					tool.GeneratePreprocessedFile = preprocessOption.preprocessNo;
-					tool.ObjectFile = objFileLocation;
+					tool.GeneratePreprocessedFile = genPreprocessed;
+					tool.ObjectFile               = objFileLocation;
 				}
 			}
 

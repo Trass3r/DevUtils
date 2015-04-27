@@ -187,15 +187,11 @@ namespace VSPackage.DevUtils
 			string curCodeLine = editPoint.GetLines(line, line + 1);
 			// TODO: comments are removed when preprocessing and thus can't find a line with comments
 
-
 			// get current configuration
-			Project p = doc.ProjectItem.ContainingProject;
-			ConfigurationManager mgr = p.ConfigurationManager;
+			Project proj = doc.ProjectItem.ContainingProject;
+			ConfigurationManager mgr = proj.ConfigurationManager;
 			string platform = mgr.ActiveConfiguration.PlatformName;
 			string conf = mgr.ActiveConfiguration.ConfigurationName;
-
-			// save the project file
-			//prj.save();
 
 			// find the currently active configuration for the current file
 			// don't use SolutionBuild as there may be mixed platforms
@@ -205,14 +201,17 @@ namespace VSPackage.DevUtils
 			dynamic fileconfig = fileconfigs.Item(conf + "|" + platform); // as VCFileConfiguration
 			dynamic tool = fileconfig.Tool;                               // VCCLCompilerTool
 
-			// save original settings
+
+			// save original settings to restore them later
+
+			// there seems to be no better way
+			// DTE undo contexts doesn't cover these project settings
+			// unload/reload the project may close all open files
+			// manipulating proj.Saved or .IsDirty does not work
 			bool lto                 = tool.WholeProgramOptimization;
 			asmListingOption asmtype = tool.AssemblerOutput;
 			string asmloc            = tool.AssemblerListingLocation;
 			string objFileLocation   = tool.ObjectFile;
-
-			// undo context doesn't seem to work for project settings
-//			dte.UndoContext.Open("ModifiedProjectSettings");
 
 			string generatedFile;
 			if (mode == 1)
@@ -247,29 +246,11 @@ namespace VSPackage.DevUtils
 			}
 			finally
 			{
-/*
-					// clean up
-				// try reloading. https://blogs.msdn.com/b/jjameson/archive/2009/03/11/visual-studio-macros-for-unloading-reloading-projects.aspx
-				Window solutionExplorer = dte.Windows.Item(Constants.vsWindowKindSolutionExplorer);
-				solutionExplorer.Activate();
-				string solutionName = dte.Solution.Properties.Item("Name").Value.ToString();
-				string projPath = solutionName + "\\" + prj.Name;
-				UIHierarchy solutionHierarchy = (UIHierarchy)solutionExplorer;
-				UIHierarchyItem projUIItem = solutionHierarchy.GetItem(projPath);
-				projUIItem.Select(vsUISelectionType.vsUISelectionTypeSelect);
-				dte.ExecuteCommand("Project.UnloadProject");
-				dte.ExecuteCommand("Project.ReloadProject");
-*/
-
 				// naive cleanup
 				if (mode == 1)
 				{
-					// switch back to prior config
-//					if (conf != "Release")
-//						sb.SolutionConfigurations.Item(conf).Activate();
-
 					tool.WholeProgramOptimization = lto;
-					tool.AssemblerOutput = asmtype;
+					tool.AssemblerOutput          = asmtype;
 					tool.AssemblerListingLocation = asmloc;
 				}
 				else if (mode == 2)
@@ -278,17 +259,6 @@ namespace VSPackage.DevUtils
 					tool.ObjectFile = objFileLocation;
 				}
 			}
-/*
-			}
-			catch(Exception)
-			finally
-			{
-				dte.UndoContext.SetAborted();
-				// seems like SetAborted already closes the context
-				if (dte.UndoContext.IsOpen())
-					dte.UndoContext.Close();
-			}
-*/
 
 			// clean the preprocessed output
 			// TODO: do this in a better way

@@ -283,43 +283,24 @@ namespace VSPackage.DevUtils
 			Window tmp = dte.ItemOperations.OpenFile(generatedFile, EnvDTE.Constants.vsViewKindCode);
 			TextDocument genFileWindow = (TextDocument)tmp.Document.Object("TextDocument");
 
-			// now try to find the function the user was looking at
-/*
-			dte.ExecuteCommand("Edit.Find");
-			dte.Find.Backwards = false;
-			dte.Find.MatchCase = true;
-			dte.Find.FindWhat = functionOfInterest + ", COMDAT";
-			dte.Find.Target = vsFindTarget.vsFindTargetCurrentDocument;
-			dte.Find.PatternSyntax = vsFindPatternSyntax.vsFindPatternSyntaxLiteral;
-			dte.Find.Action = vsFindAction.vsFindActionFind;
-*/
-
-			// first try to find the function, should work
-//			vsFindResult funcFound = dte.Find.Execute();
-
-			// now try to jump to the line
-			// close the find window if we found at least the function
-/*
-			if (!String.IsNullOrWhiteSpace(curCodeLine))
-			{
-			    dte.Find.FindWhat = curCodeLine;
-			    dte.Find.Execute();
-			}
-			// close find window if found
-			if (funcFound != vsFindResult.vsFindResultNotFound)
-				dte.Windows.Item("{CF2DDC32-8CAD-11D2-9302-005345000000}").Close();
-*/
-
 			// crashes VS
 //			bool ddd = genFileWindow.ReplacePattern("^$\n", "", (int)vsFindOptions.vsFindOptionsRegularExpression);
 			// http://stackoverflow.com/questions/12453160/remove-empty-lines-in-text-using-visual-studio
 			// ^:b*$\n -> ^(?([^\r\n])\s)*\r?$\r?\n
 
+			// now try to find the function the user was looking at
+
+			// if it's a template the fullName will be like ns::bar<T>
+			// try to find an instantiation instead then
+			int bracketPos = functionOfInterest.IndexOf("<");
+			if (bracketPos > 0)
+				functionOfInterest = functionOfInterest.Substring(0, bracketPos+1);
+
 			TextSelection textSelObj = genFileWindow.Selection;
 			// first try to find the function
 			// TODO: for some reason vsFindOptions.vsFindOptionsFromStart option doesn't work
 			textSelObj.StartOfDocument();
-			bool res = textSelObj.FindText(functionOfInterest + ", COMDAT", (int)vsFindOptions.vsFindOptionsMatchCase);
+			bool res = textSelObj.FindText("; " + functionOfInterest, (int)vsFindOptions.vsFindOptionsMatchCase);
 			if (!res && mode == 1)
 			{
 				dte.StatusBar.Text = "Couldn't find function '" + functionOfInterest + "'";

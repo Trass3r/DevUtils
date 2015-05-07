@@ -1,16 +1,16 @@
 DevUtils
 ========
 
-For simple tasks like checking the output of the C++ preprocessor or the code generation Visual Studio requires you to:
-- go to the file or project properties and set the correct compiler flags and output options
-- run the compiler
-- locate the generated file
-- find your function in the hundreds of thousands of LoCs
+This Visual Studio extension adds some convenience features I missed in particular for C++ development.
 
-This is an extension that automates those tedious steps via convenient context menu entries.
+- adds editor context menu items for inspecting the preprocessor and code generator output
+- taskbar progress visualization and total solution build time
 
-It is alpha quality but does its job.
-Should be used together with an assembler syntax highlighting extension like AsmHighlighter.
+In conjunction with an assembler syntax highlighting extension like AsmHighlighter this provides an easy way to optimize code or figure out preprocessor issues.
+
+It strives to jump to the correct place in the generated output file if possible.
+This may not be correct if you are in a template function and want to see the assembly or the cursor is placed on a line using macros and preprocessed output is desired.
+
 
 Download
 --------
@@ -28,7 +28,6 @@ TODO
 - cleanup!
 - better methods for finding the correct spot in the generated file
 - prevent pollution of project file by finding a working undo mechanism
-- /showIncludes tree view
 - RunToCursor functionality with ignoring breakpoints
 
 

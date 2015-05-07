@@ -55,14 +55,10 @@ namespace VSPackage.DevUtils
 
 			_numBuiltProjects = 0;
 			taskbarItemInfo.ProgressValue = 0;
+			taskbarItemInfo.ProgressState = TaskbarItemProgressState.Indeterminate;
 
 			if (scope != vsBuildScope.vsBuildScopeSolution)
-			{
-				taskbarItemInfo.ProgressState = TaskbarItemProgressState.Indeterminate;
 				return;
-			}
-
-			taskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
 
 			_buildStartTime = DateTime.Now;
 		}
@@ -87,6 +83,10 @@ namespace VSPackage.DevUtils
 		private void buildProjDone(string project, string projectConfig, string platform, string solutionConfig, bool success)
 		{
 			++_numBuiltProjects;
+
+			// switch to normal mode
+			if (_numBuiltProjects == 1)
+				taskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
 
 			if (!success)
 				taskbarItemInfo.ProgressState = TaskbarItemProgressState.Error;

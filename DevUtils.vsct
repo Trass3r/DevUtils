@@ -78,6 +78,15 @@
 				</Strings>
 			</Button>
 
+			<Button guid="guidDevUtilsCmdSet" id="cmdShowDecompiledCSharp" priority="0x0100" type="Button">
+				<Parent guid="guidDevUtilsCmdSet" id="MyMenuGroup" />
+				<Icon guid="guidImages" id="asmListingPic" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<Strings>
+					<ButtonText>Show Decompiled C# code</ButtonText>
+				</Strings>
+			</Button>
+
 		</Buttons>
 
 		<!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -99,12 +108,13 @@
 		<GUIDSymbol name="guidDevUtilsPkg" value="{19b8a882-47f2-4fdd-a657-5f15a2c5ecae}" />
 
 		<!-- This is the guid used to group the menu commands together -->
-		<GuidSymbol name="guidDevUtilsCmdSet" value="{57945603-4aa5-4f1b-85c4-b3c450332e5e}">
+		<GUIDSymbol name="guidDevUtilsCmdSet" value="{57945603-4aa5-4f1b-85c4-b3c450332e5e}">
 
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
 			<IDSymbol name="cmdShowAssembly" value="0x0100" />
 			<IDSymbol name="cmdShowPreprocessed" value="0x0101" />
-		</GuidSymbol>
+			<IDSymbol name="cmdShowDecompiledCSharp" value="0x0102" />
+		</GUIDSymbol>
 
 
 		<GUIDSymbol name="guidImages" value="{fa1faee0-458b-453b-9929-f128cd765659}" >

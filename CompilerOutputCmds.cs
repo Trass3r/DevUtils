@@ -1,10 +1,13 @@
 ﻿using System;
+using System.ComponentModel;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
+using Process = System.Diagnostics.Process;
 
 namespace VSPackage.DevUtils
 {
@@ -15,6 +18,7 @@ namespace VSPackage.DevUtils
 	{
 		public const int cmdShowAssembly         = 0x100;
 		public const int cmdShowPreprocessed     = 0x101;
+		public const int cmdShowDecompiledCSharp = 0x102; // C#
 
 		/// <summary>
 		/// Command menu group (command set Guid).
@@ -50,6 +54,11 @@ namespace VSPackage.DevUtils
 				menuCommandID = new CommandID(guidDevUtilsCmdSet, cmdShowPreprocessed);
 				cmd = new OleMenuCommand((s, e) => showCppOutput(2), changeHandler, beforeQueryStatus, menuCommandID);
 				cmd.Properties["lang"] = "C/C++";
+				mcs.AddCommand(cmd);
+
+				menuCommandID = new CommandID(guidDevUtilsCmdSet, cmdShowDecompiledCSharp);
+				cmd = new OleMenuCommand((s, e) => showDecompiledCSharp(), changeHandler, beforeQueryStatus, menuCommandID);
+				cmd.Properties["lang"] = "CSharp";
 				mcs.AddCommand(cmd);
 			}
 		}
@@ -281,5 +290,65 @@ namespace VSPackage.DevUtils
 			}
 			dte.Documents.Open(altFile, "Text");
 		}
+
+		// callback: show decompiled C# code
+		private void showDecompiledCSharp()
+		{
+			Document doc = dte.ActiveDocument;
+			var tdoc = doc.Object("TextDocument") as TextDocument;
+			if (tdoc == null)
+			{
+				package.showMsgBox("Could not obtain the active TextDocument object");
+				return;
+			}
+
+			// get currently viewed function
+			string functionOfInterest = "";
+			var selection = doc.Selection as TextSelection;
+			CodeElement codeEl = selection.ActivePoint.CodeElement[vsCMElement.vsCMElementFunction];
+
+			if (codeEl == null)
+			{
+				package.showMsgBox("You should place the cursor inside a function.");
+				return;
+			}
+
+			functionOfInterest = codeEl.FullName;
+
+			int line = selection.ActivePoint.Line;
+			EditPoint editPoint = tdoc.CreateEditPoint();
+			string curCodeLine = editPoint.GetLines(line, line + 1);
+
+			string args = @"/language:C# /navigateTo:M:"; // /saveDir:%TEMP%\dddd";
+			args += functionOfInterest;
+
+			// already checked beforehand that the file is part of a project
+			Configuration config = doc.ProjectItem.ContainingProject.ConfigurationManager.ActiveConfiguration;
+			// misuse this property to get a path to the output assembly
+			Property prop = config.Properties.Item("CodeAnalysisInputAssembly");
+			string assemblyPath = prop.Value.ToString();
+			assemblyPath = Path.Combine(Path.GetDirectoryName(doc.ProjectItem.ContainingProject.FullName), assemblyPath);
+
+			if (!File.Exists(assemblyPath))
+			{
+				package.showMsgBox($"Output file {assemblyPath} does not exist!");
+				return;
+			}
+
+			args += " \"" + assemblyPath + '"';
+			var proc = new Process
+			{
+				StartInfo = new ProcessStartInfo(@"ILSpy.exe", args)
+			};
+			try
+			{
+				proc.Start();
+			}
+			catch (Win32Exception)
+			{
+				package.showMsgBox("Could not execute ILSpy. Is it on the path?", "ILSpy missing");
+			}
+		}
+
 	}
 }

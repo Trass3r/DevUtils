@@ -1,11 +1,10 @@
 ﻿using System;
 using System.ComponentModel.Design;
-using System.Globalization;
+using System.IO;
 using System.Text.RegularExpressions;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 
 namespace VSPackage.DevUtils
 {
@@ -14,8 +13,8 @@ namespace VSPackage.DevUtils
 	/// </summary>
 	internal sealed class CompilerOutputCmds
 	{
-		public const int cmdShowAssembly = 0x100;
-		public const int cmdShowPreprocessed = 0x101;
+		public const int cmdShowAssembly         = 0x100;
+		public const int cmdShowPreprocessed     = 0x101;
 
 		/// <summary>
 		/// Command menu group (command set Guid).
@@ -32,9 +31,7 @@ namespace VSPackage.DevUtils
 		private IServiceProvider serviceProvider => package;
 
 		// get the DTE object for this package
-		// retrieving it in Package.Initialize is buggy cause the IDE might not be fully initialized then -.-
-		// and it's not worth the hassle registering for ready events
-		private EnvDTE80.DTE2 dte => (EnvDTE80.DTE2) serviceProvider.GetService(typeof (EnvDTE.DTE));
+		private EnvDTE80.DTE2 dte => package.dte;
 
 		private CompilerOutputCmds(DevUtilsPackage package)
 		{
@@ -47,10 +44,12 @@ namespace VSPackage.DevUtils
 				// Create the command for the menu item.
 				CommandID menuCommandID = new CommandID(guidDevUtilsCmdSet, cmdShowAssembly);
 				var cmd = new OleMenuCommand((s, e) => showCppOutput(1), changeHandler, beforeQueryStatus, menuCommandID);
+				cmd.Properties["lang"] = "C/C++";
 				mcs.AddCommand(cmd);
 
 				menuCommandID = new CommandID(guidDevUtilsCmdSet, cmdShowPreprocessed);
 				cmd = new OleMenuCommand((s, e) => showCppOutput(2), changeHandler, beforeQueryStatus, menuCommandID);
+				cmd.Properties["lang"] = "C/C++";
 				mcs.AddCommand(cmd);
 			}
 		}
@@ -66,7 +65,7 @@ namespace VSPackage.DevUtils
 
 		/// called when the context menu is opened
 		///
-		/// makes entries only visible if the document is actually C++
+		/// makes entries only visible if the document is a supported language
 		/// but enable it only if it's part of a project
 		private void beforeQueryStatus(object sender, EventArgs e)
 		{
@@ -82,20 +81,13 @@ namespace VSPackage.DevUtils
 
 			Document doc = dte.ActiveDocument;
 
-			bool enabled = false;
-			bool visible = true;
+			// first check if it's part of a project
+			ProjectItem projectItem = doc.ProjectItem;
+			if (projectItem?.Object == null || projectItem.ContainingProject?.Object == null)
+				menuCommand.Enabled = false;
 
-			ProjectItem projectItem = doc != null ? doc.ProjectItem : null;
-			if (projectItem != null)
-			{
-				if (doc.Language != "C/C++")
-					visible = false;
-				else if (projectItem.Object != null && projectItem.ContainingProject != null)
-					enabled = projectItem.ContainingProject.Object != null;
-			}
-
-			menuCommand.Enabled = enabled;
-			menuCommand.Visible = visible;
+			if (doc.Language != (string) menuCommand.Properties["lang"])
+				menuCommand.Visible = false;
 		}
 
 		// 1: show assembly code for currently open source file
@@ -115,9 +107,6 @@ namespace VSPackage.DevUtils
 				return;
 			}
 
-			// get the name of the document (lower-case)
-			string docname = doc.Name.ToLower();
-
 			// get currently viewed function
 			string functionOfInterest = "";
 			TextSelection selection = doc.Selection as TextSelection;
@@ -133,12 +122,9 @@ namespace VSPackage.DevUtils
 			// TODO: in case of a template this gets something like funcName<T>, the assembly contains funcName<actualType>
 			//       it doesn't in the case of macros either, e.g. gets _tmain but in the asm it will be wmain
 
-			// TODO: TextSelection or EditPoint?
 			// http://www.viva64.com/en/a/0082/#ID0ELOBK
 			// EditPoint directly manipulates text buffer data instead of operating with the text through the editor UI.
-			// The difference between them is that the text buffer is not influenced by such editor-specific notions as WordWrap and Virtual Spaces.
 			int line = selection.ActivePoint.Line;
-			TextDocument textDoc = doc.Object() as TextDocument;
 			EditPoint editPoint = tdoc.CreateEditPoint();
 			string curCodeLine = editPoint.GetLines(line, line + 1);
 			// TODO: comments are removed when preprocessing and thus can't find a line with comments
@@ -174,7 +160,7 @@ namespace VSPackage.DevUtils
 			if (mode == 1)
 			{
 				// asmListingAsmSrc => '.asm'
-				generatedFile = System.IO.Path.GetTempFileName() + ".asm"; //System.IO.Path.GetTempPath
+				generatedFile = Path.GetTempFileName() + ".asm"; //System.IO.Path.GetTempPath
 
 				tool.WholeProgramOptimization = false;
 				tool.AssemblerOutput = (dynamic)Enum.Parse(tool.AssemblerOutput.GetType(), "asmListingAsmSrc");
@@ -184,7 +170,7 @@ namespace VSPackage.DevUtils
 			{
 				// not generally applicable
 				//generatedFile = prj.ProjectDirectory + prjconfig.IntermediateDirectory + Replace(file.Name, ".cpp", ".i");
-				generatedFile = System.IO.Path.GetTempFileName() + ".cpp";
+				generatedFile = Path.GetTempFileName() + ".cpp";
 
 				tool.GeneratePreprocessedFile = (dynamic)Enum.Parse(tool.GeneratePreprocessedFile.GetType(), "preprocessYes");
 				// there's no separate option for this, so misuse /Fo
@@ -217,10 +203,10 @@ namespace VSPackage.DevUtils
 				}
 			}
 
-			postCompile(generatedFile, mode, functionOfInterest, curCodeLine);
+			postCompileCpp(generatedFile, mode, functionOfInterest, curCodeLine);
 		}
 
-		private void postCompile(string generatedFile, int mode, string functionOfInterest, string curCodeLine)
+		private void postCompileCpp(string generatedFile, int mode, string functionOfInterest, string curCodeLine)
 		{
 			// clean the preprocessed output
 			// TODO: do this in a better way

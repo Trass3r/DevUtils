@@ -15,10 +15,10 @@
         defining some of the constants that we will use inside the file. -->
 
 	<!--This is the file that defines the IDs for all the commands exposed by VisualStudio. -->
-	<Extern href="stdidcmd.h"/>
+	<Extern href="stdidcmd.h" />
 
 	<!--This header contains the command ids for the menus provided by the shell. -->
-	<Extern href="vsshlids.h"/>
+	<Extern href="vsshlids.h" />
 
 
 
@@ -43,7 +43,7 @@
 
 			<Group guid="guidDevUtilsCmdSet" id="MyMenuGroup" priority="0x0600">
 				<!-- append our entries to code window context menu -->
-				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
 			</Group>
 
 		</Groups>
@@ -96,7 +96,7 @@
 
 	<Symbols>
 		<!-- This is the package guid. -->
-		<GuidSymbol name="guidDevUtilsPkg" value="{19b8a882-47f2-4fdd-a657-5f15a2c5ecae}" />
+		<GUIDSymbol name="guidDevUtilsPkg" value="{19b8a882-47f2-4fdd-a657-5f15a2c5ecae}" />
 
 		<!-- This is the guid used to group the menu commands together -->
 		<GuidSymbol name="guidDevUtilsCmdSet" value="{57945603-4aa5-4f1b-85c4-b3c450332e5e}">
@@ -107,10 +107,10 @@
 		</GuidSymbol>
 
 
-		<GuidSymbol name="guidImages" value="{fa1faee0-458b-453b-9929-f128cd765659}" >
+		<GUIDSymbol name="guidImages" value="{fa1faee0-458b-453b-9929-f128cd765659}" >
 			<IDSymbol name="asmListingPic" value="1" />
 			<IDSymbol name="preprocPic" value="2" />
-		</GuidSymbol>
+		</GUIDSymbol>
 	</Symbols>
 
 </CommandTable>

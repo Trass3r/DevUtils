@@ -101,11 +101,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildEventsHandler.cs" />
-    <Compile Include="Guids.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="DevUtilsPackage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PkgCmdID.cs" />
+    <Compile Include="CompilerOutputCmds.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VSPackage.resx">

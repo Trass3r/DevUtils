@@ -6,7 +6,6 @@ using System.ComponentModel.Design;
 using Microsoft.Win32;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 
 using EnvDTE;
@@ -51,13 +50,10 @@ namespace VSPackage.DevUtils
 		{
 		}
 
-		/// get the DTE object for this package
-		public DTE2 dte
-		{
-			// retrieving it in Initialize is buggy cause the IDE might not be fully initialized then -.-
-			// and it's not worth the hassle registering for ready events
-			get { return (DTE2)GetService(typeof(DTE)); }
-		}
+		// get the DTE object for this package
+		// retrieving it in Package.Initialize is buggy cause the IDE might not be fully initialized then -.-
+		// and it's not worth the hassle registering for ready events
+		internal EnvDTE80.DTE2 dte => (EnvDTE80.DTE2)GetService(typeof(EnvDTE.DTE));
 
 		/////////////////////////////////////////////////////////////////////////////
 		// Overridden Package Implementation

@@ -193,23 +193,44 @@ namespace VSPackage.DevUtils
 			}
 			catch (Exception e)
 			{
-				package.showMsgBox("Compilation failed, this means there are errors in the code:\n" + e.Message);
+				package.writeStatus($"VCFileConfiguration.Compile() failed: {e.Message}. Trying command Build.Compile now...");
+
+				_dispBuildEvents_OnBuildProjConfigDoneEventHandler onProjBuildDone = null;
+				onProjBuildDone = (project, projectConfig, platfrm, solutionConfig, success) =>
+				{
+					dte.Events.BuildEvents.OnBuildProjConfigDone -= onProjBuildDone;
+					// naive cleanup
+					if (mode == 1)
+					{
+						tool.WholeProgramOptimization = lto;
+						tool.AssemblerOutput          = asmtype;
+						tool.AssemblerListingLocation = asmloc;
+					}
+					else if (mode == 2)
+					{
+						tool.GeneratePreprocessedFile = genPreprocessed;
+						tool.ObjectFile               = objFileLocation;
+					}
+
+					if (success)
+						postCompileCpp(generatedFile, mode, functionOfInterest, curCodeLine);
+				};
+				dte.Events.BuildEvents.OnBuildProjConfigDone += onProjBuildDone;
+				dte.ExecuteCommand("Build.Compile");
 				return;
 			}
-			finally
+
+			// naive cleanup
+			if (mode == 1)
 			{
-				// naive cleanup
-				if (mode == 1)
-				{
-					tool.WholeProgramOptimization = lto;
-					tool.AssemblerOutput          = asmtype;
-					tool.AssemblerListingLocation = asmloc;
-				}
-				else if (mode == 2)
-				{
-					tool.GeneratePreprocessedFile = genPreprocessed;
-					tool.ObjectFile               = objFileLocation;
-				}
+				tool.WholeProgramOptimization = lto;
+				tool.AssemblerOutput          = asmtype;
+				tool.AssemblerListingLocation = asmloc;
+			}
+			else if (mode == 2)
+			{
+				tool.GeneratePreprocessedFile = genPreprocessed;
+				tool.ObjectFile               = objFileLocation;
 			}
 
 			postCompileCpp(generatedFile, mode, functionOfInterest, curCodeLine);
@@ -217,6 +238,12 @@ namespace VSPackage.DevUtils
 
 		private void postCompileCpp(string generatedFile, int mode, string functionOfInterest, string curCodeLine)
 		{
+			if (!File.Exists(generatedFile))
+			{
+				package.showMsgBox("Could not find expected output file\n" + generatedFile);
+				return;
+			}
+
 			// clean the preprocessed output
 			// TODO: do this in a better way
 			if (mode == 2)

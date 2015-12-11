@@ -319,8 +319,10 @@ namespace VSPackage.DevUtils
 			EditPoint editPoint = tdoc.CreateEditPoint();
 			string curCodeLine = editPoint.GetLines(line, line + 1);
 
-			string args = @"/language:C# /navigateTo:M:"; // /saveDir:%TEMP%\dddd";
+			string args = @"/language:C# /clearList /navigateTo:M:"; // /saveDir:%TEMP%\dddd";
 			args += functionOfInterest;
+			if (curCodeLine.Trim().Length > 5)
+				args += " /search:\"" + curCodeLine + '"';
 
 			// already checked beforehand that the file is part of a project
 			Configuration config = doc.ProjectItem.ContainingProject.ConfigurationManager.ActiveConfiguration;

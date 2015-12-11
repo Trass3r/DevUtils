@@ -82,6 +82,7 @@ namespace VSPackage.DevUtils
 
 		public void writeStatus(string msg)
 		{
+			ThreadHelper.ThrowIfNotOnUIThread();
 			IVsStatusbar sb = (IVsStatusbar) GetService(typeof(SVsStatusbar));
 			sb.SetColorText(msg, 0, 0);
 		}

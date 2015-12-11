@@ -1,7 +1,4 @@
-﻿using System;
-using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
+﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
@@ -14,10 +11,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyProduct("DevUtils")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]   
-[assembly: ComVisible(false)]     
-[assembly: CLSCompliant(false)]
-[assembly: NeutralResourcesLanguage("en-US")]
+[assembly: AssemblyCulture("")]
+
+[assembly: ComVisible(false)]
 
 // Version information for an assembly consists of the following four values:
 //

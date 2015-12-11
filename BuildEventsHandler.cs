@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Shell;
 
-namespace VSPackage.DevUtils
+namespace DevUtils
 {
 	internal class BuildEventsHandler
 	{

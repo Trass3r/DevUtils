@@ -2,7 +2,7 @@
 // MUST match PkgCmdID.h
 using System;
 
-namespace VSPackage.DevUtils
+namespace DevUtils
 {
     internal static class PkgCmdIDList
     {

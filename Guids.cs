@@ -2,7 +2,7 @@
 // MUST match guids.h
 using System;
 
-namespace VSPackage.DevUtils
+namespace DevUtils
 {
     internal static class GuidList
     {

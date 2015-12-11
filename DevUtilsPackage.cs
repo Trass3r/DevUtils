@@ -13,7 +13,7 @@ using EnvDTE;
 using EnvDTE80;
 using System.Text.RegularExpressions;
 
-namespace VSPackage.DevUtils
+namespace DevUtils
 {
 	/// <summary>
 	/// This is the class that implements the package exposed by this assembly.
@@ -142,8 +142,12 @@ namespace VSPackage.DevUtils
 		}
 
 		// TODO: mode 1 is assembly, 2 is preprocessed
-		private void doIt(int mode = 1)
+		[SuppressMessage("VSSDK003", "VSSDK003")]
+		private async void doIt(int mode = 1)
 		{
+			try
+			{
+
 			// if in a header try to open the cpp file
 			switchToCppFile();
 
@@ -236,14 +240,32 @@ namespace VSPackage.DevUtils
 			try
 			{
 				// forceBuild (even if up-to-date) and waitOnBuild
-				fileconfig.Compile(true, true);
+				try
+				{
+					fileconfig.Compile(true, true);
+				}
+				catch (Exception )
+				{
+					// try again
+/*					dte.ExecuteCommand();
+					int i = 50;
+					while (i-- > 0)
+					{
+						if (dte.Solution.SolutionBuild.BuildState == vsBuildState.vsBuildStateDone)
+							break;
+
+						System.Threading.Thread.Sleep(500);
+					}
+*/
+					await RunCommandAsync("Build.Compile");
+				}
 			}
 			catch (Exception e)
 			{
-				showMsgBox("Compilation failed, this means there are errors in the code:\n" + e.Message);
+				showMsgBox("Compilation failed, file config modifications left intact, try to compile the file to check for errors.\n\nMessage: " + e.ToString());
 				return;
 			}
-			finally
+			// clean up if compilation succeeded
 			{
 				// naive cleanup
 				if (mode == 1)
@@ -313,10 +335,32 @@ namespace VSPackage.DevUtils
 				textSelObj.FindText(curCodeLine, (int)vsFindOptions.vsFindOptionsMatchCase);
 
 			textSelObj.StartOfLine();
+
+			}
+			catch (Exception e)
+			{
+				showMsgBox(e.ToString());
+			}
 		}
 
-		/// if the current document is an .h file, at least try switching to a potential cpp file of the same name
-		public void switchToCppFile()
+		private async System.Threading.Tasks.Task RunCommandAsync(string cmd)
+		{
+			var tcs = new TaskCompletionSource<object>();
+			_dispBuildEvents_OnBuildProjConfigDoneEventHandler onProjBuildDone = (project, projectConfig, platform, solutionConfig, success) => tcs.TrySetResult(null);
+			try
+			{
+				dte.Events.BuildEvents.OnBuildProjConfigDone += onProjBuildDone;
+				dte.ExecuteCommand(cmd);
+				await tcs.Task;
+			}
+			finally
+			{
+				dte.Events.BuildEvents.OnBuildProjConfigDone -= onProjBuildDone;
+			}
+		}
+
+	/// if the current document is an .h file, at least try switching to a potential cpp file of the same name
+	public void switchToCppFile()
 		{
 			DTE2 dte = (DTE2)GetService(typeof(DTE));
 			string origFile = dte.ActiveDocument.FullName;
@@ -335,6 +379,7 @@ namespace VSPackage.DevUtils
 
 		private void showMsgBox(string msg, string title = "Error")
 		{
+			ThreadHelper.ThrowIfNotOnUIThread();
 			IVsUIShell uiShell = (IVsUIShell)GetService(typeof(SVsUIShell));
 			Guid clsid = Guid.Empty;
 			int result;
@@ -353,6 +398,7 @@ namespace VSPackage.DevUtils
 
 		public void writeStatus(string msg)
 		{
+			ThreadHelper.ThrowIfNotOnUIThread();
 			IVsStatusbar sb = (IVsStatusbar) GetService(typeof(SVsStatusbar));
 			sb.SetColorText(msg, 0, 0);
 		}

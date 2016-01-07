@@ -82,6 +82,10 @@ namespace VSPackage.DevUtils
 			if (menuCommand == null)
 				return;
 
+			// reset
+			menuCommand.Enabled = true;
+			menuCommand.Visible = true;
+
 			// cases:
 			// normal .cpp in project
 			// external .cpp file => projectItem != null, projectItem.Object == null

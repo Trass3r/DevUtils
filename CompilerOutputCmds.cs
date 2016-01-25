@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using EnvDTE;
 using EnvDTE80;
@@ -122,7 +123,7 @@ namespace VSPackage.DevUtils
 
 			// get currently viewed function
 			string functionOfInterest = "";
-			TextSelection selection = doc.Selection as TextSelection;
+			TextSelection selection = tdoc.Selection;
 			CodeElement codeEl = selection.ActivePoint.CodeElement[vsCMElement.vsCMElementFunction];
 
 			if (codeEl == null)
@@ -325,6 +326,7 @@ namespace VSPackage.DevUtils
 		// callback: show decompiled C# code
 		private void showDecompiledCSharp()
 		{
+
 			Document doc = dte.ActiveDocument;
 			var tdoc = doc.Object("TextDocument") as TextDocument;
 			if (tdoc == null)
@@ -333,27 +335,69 @@ namespace VSPackage.DevUtils
 				return;
 			}
 
-			// get currently viewed function
-			string functionOfInterest = "";
-			var selection = doc.Selection as TextSelection;
-			CodeElement codeEl = selection.ActivePoint.CodeElement[vsCMElement.vsCMElementFunction];
+			// get currently viewed code element
+			// try different levels as fallback
+			var selection = tdoc.Selection;
+			var actPt = selection.ActivePoint;
+			CodeElement codeEl = actPt.CodeElement[vsCMElement.vsCMElementProperty] ??
+			                     actPt.CodeElement[vsCMElement.vsCMElementFunction] ??
+			                     actPt.CodeElement[vsCMElement.vsCMElementClass];
 
 			if (codeEl == null)
 			{
-				package.showMsgBox("You should place the cursor inside a function.");
+				package.showMsgBox("Could not find any supported code elements around the cursor.");
 				return;
 			}
 
-			functionOfInterest = codeEl.FullName;
+			dte.ExecuteCommand("Build.BuildSelection");
 
-			int line = selection.ActivePoint.Line;
-			EditPoint editPoint = tdoc.CreateEditPoint();
-			string curCodeLine = editPoint.GetLines(line, line + 1);
+			string functionOfInterest = null;
+			switch (codeEl.Kind)
+			{
+			case vsCMElement.vsCMElementProperty:
+				functionOfInterest = "P:" + codeEl.FullName;
+				break;
+			case vsCMElement.vsCMElementFunction:
+				var func = codeEl as CodeFunction2;
+				functionOfInterest = "M:" + func.FullName;
 
-			string args = @"/language:C# /clearList /navigateTo:M:"; // /saveDir:%TEMP%\dddd";
+				if (func.IsGeneric)
+				{
+					// just fall back
+					codeEl = func.Parent as CodeElement;
+					goto case vsCMElement.vsCMElementClass;
+				}
+
+				if ((func.FunctionKind & vsCMFunction.vsCMFunctionConstructor) == vsCMFunction.vsCMFunctionConstructor)
+				{
+					int idx = functionOfInterest.LastIndexOf('.');
+					var basis = functionOfInterest.Remove(idx + 1) + '#';
+					if (func.IsShared)
+						basis += 'c';
+					functionOfInterest = basis + "ctor";
+				}
+				else if ((func.FunctionKind & vsCMFunction.vsCMFunctionDestructor) == vsCMFunction.vsCMFunctionDestructor)
+				{
+					int idx = functionOfInterest.LastIndexOf('.');
+					var basis = functionOfInterest.Remove(idx + 1);
+					functionOfInterest = basis + "Finalize";
+				}
+				break;
+			case vsCMElement.vsCMElementClass:
+				// var cl = codeEl as CodeClass2;
+				functionOfInterest = "T:" + codeEl.FullName;
+				break;
+			}
+
+			int bidx = functionOfInterest.IndexOf('<');
+			if (bidx > 0)
+			{
+				int cnt = functionOfInterest.Count(c => c == ',') + 1;
+				functionOfInterest = functionOfInterest.Substring(0, bidx) + '`' + cnt + functionOfInterest.Substring(functionOfInterest.IndexOf('>', bidx + 1) + 1);
+			}
+
+			string args = @"/language:C# /clearList /navigateTo:";
 			args += functionOfInterest;
-			if (curCodeLine.Trim().Length > 5)
-				args += " /search:\"" + curCodeLine + '"';
 
 			// already checked beforehand that the file is part of a project
 			Configuration config = doc.ProjectItem.ContainingProject.ConfigurationManager.ActiveConfiguration;

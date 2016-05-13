@@ -174,71 +174,46 @@ namespace VSPackage.DevUtils
 			if (mode == 1)
 			{
 				// asmListingAsmSrc => '.asm'
-				generatedFile = Path.GetTempFileName() + ".asm"; //System.IO.Path.GetTempPath
+				generatedFile = Path.GetTempFileName() + ".asm";
 
 				tool.WholeProgramOptimization = false;
-				tool.AssemblerOutput = (dynamic)Enum.Parse(tool.AssemblerOutput.GetType(), "asmListingAsmSrc");
+				tool.AssemblerOutput = Enum.Parse(tool.AssemblerOutput.GetType(), "asmListingAsmSrc");
 				tool.AssemblerListingLocation = generatedFile;
 			}
 			else /*if (mode == 2)*/
 			{
-				// not generally applicable
-				//generatedFile = prj.ProjectDirectory + prjconfig.IntermediateDirectory + Replace(file.Name, ".cpp", ".i");
 				generatedFile = Path.GetTempFileName() + ".cpp";
 
-				tool.GeneratePreprocessedFile = (dynamic)Enum.Parse(tool.GeneratePreprocessedFile.GetType(), "preprocessYes");
+				tool.GeneratePreprocessedFile = Enum.Parse(tool.GeneratePreprocessedFile.GetType(), "preprocessYes");
 				// there's no separate option for this, so misuse /Fo
 				tool.ObjectFile = generatedFile;
 			}
 
-			try
+			// VCFileConfiguration.Compile often does not work anymore and blocks the GUI
+			// so just use the Compile command by installing a one-time callback
+			_dispBuildEvents_OnBuildProjConfigDoneEventHandler onProjBuildDone = null;
+			onProjBuildDone = (project, projectConfig, platfrm, solutionConfig, success) =>
 			{
-				// forceBuild (even if up-to-date) and waitOnBuild
-				fileconfig.Compile(true, true);
-			}
-			catch (Exception e)
-			{
-				package.writeStatus($"VCFileConfiguration.Compile() failed: {e.Message}. Trying command Build.Compile now...");
+				dte.Events.BuildEvents.OnBuildProjConfigDone -= onProjBuildDone;
 
-				_dispBuildEvents_OnBuildProjConfigDoneEventHandler onProjBuildDone = null;
-				onProjBuildDone = (project, projectConfig, platfrm, solutionConfig, success) =>
+				// naive cleanup
+				if (mode == 1)
 				{
-					dte.Events.BuildEvents.OnBuildProjConfigDone -= onProjBuildDone;
-					// naive cleanup
-					if (mode == 1)
-					{
-						tool.WholeProgramOptimization = lto;
-						tool.AssemblerOutput          = asmtype;
-						tool.AssemblerListingLocation = asmloc;
-					}
-					else if (mode == 2)
-					{
-						tool.GeneratePreprocessedFile = genPreprocessed;
-						tool.ObjectFile               = objFileLocation;
-					}
+					tool.WholeProgramOptimization = lto;
+					tool.AssemblerOutput          = asmtype;
+					tool.AssemblerListingLocation = asmloc;
+				}
+				else if (mode == 2)
+				{
+					tool.GeneratePreprocessedFile = genPreprocessed;
+					tool.ObjectFile               = objFileLocation;
+				}
 
-					if (success)
-						postCompileCpp(generatedFile, mode, functionOfInterest, curCodeLine);
-				};
-				dte.Events.BuildEvents.OnBuildProjConfigDone += onProjBuildDone;
-				dte.ExecuteCommand("Build.Compile");
-				return;
-			}
-
-			// naive cleanup
-			if (mode == 1)
-			{
-				tool.WholeProgramOptimization = lto;
-				tool.AssemblerOutput          = asmtype;
-				tool.AssemblerListingLocation = asmloc;
-			}
-			else if (mode == 2)
-			{
-				tool.GeneratePreprocessedFile = genPreprocessed;
-				tool.ObjectFile               = objFileLocation;
-			}
-
-			postCompileCpp(generatedFile, mode, functionOfInterest, curCodeLine);
+				if (success)
+					postCompileCpp(generatedFile, mode, functionOfInterest, curCodeLine);
+			};
+			dte.Events.BuildEvents.OnBuildProjConfigDone += onProjBuildDone;
+			dte.ExecuteCommand("Build.Compile");
 		}
 
 		private void postCompileCpp(string generatedFile, int mode, string functionOfInterest, string curCodeLine)

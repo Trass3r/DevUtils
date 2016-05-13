@@ -157,18 +157,11 @@ namespace VSPackage.DevUtils
 			dynamic fileconfig = fileconfigs.Item(conf + "|" + platform); // as VCFileConfiguration
 			dynamic tool = fileconfig.Tool;                               // VCCLCompilerTool
 
-
-			// save original settings to restore them later
-
-			// there seems to be no better way
-			// DTE undo contexts doesn't cover these project settings
-			// unload/reload the project may close all open files
-			// manipulating proj.Saved or .IsDirty does not work
-			bool lto                 = tool.WholeProgramOptimization;
-			dynamic asmtype          = tool.AssemblerOutput;
-			dynamic genPreprocessed  = tool.GeneratePreprocessedFile;
-			string asmloc            = tool.AssemblerListingLocation;
-			string objFileLocation   = tool.ObjectFile;
+			// brute-force way to prevent project file modifications
+			// copy to TEMP and restore later
+			proj.Save();
+			string tempCopyPath = Path.Combine(Path.GetTempPath(), proj.Name);
+			File.Copy(proj.FullName, tempCopyPath, true);
 
 			string generatedFile;
 			if (mode == 1)
@@ -196,17 +189,10 @@ namespace VSPackage.DevUtils
 			{
 				dte.Events.BuildEvents.OnBuildProjConfigDone -= onProjBuildDone;
 
-				// naive cleanup
-				if (mode == 1)
+				if (File.Exists(tempCopyPath)) // just to be safe
 				{
-					tool.WholeProgramOptimization = lto;
-					tool.AssemblerOutput          = asmtype;
-					tool.AssemblerListingLocation = asmloc;
-				}
-				else if (mode == 2)
-				{
-					tool.GeneratePreprocessedFile = genPreprocessed;
-					tool.ObjectFile               = objFileLocation;
+					File.Delete(proj.FullName);
+					File.Move(tempCopyPath, proj.FullName);
 				}
 
 				if (success)

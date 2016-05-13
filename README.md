@@ -1,9 +1,9 @@
 DevUtils
 ========
 
-This Visual Studio extension adds some convenience features I missed in particular for C++ development.
+This Visual Studio extension adds some convenience features I missed for C++ and C# development.
 
-- adds editor context menu items for inspecting the preprocessor and code generator output
+- adds editor context menu items for inspecting the C++ preprocessor and code generator output resp. C# disassembly via ILSpy
 - taskbar progress visualization and total solution build time
 
 In conjunction with an assembler syntax highlighting extension like AsmHighlighter this provides an easy way to optimize code or figure out preprocessor issues.
@@ -20,14 +20,11 @@ Known issues
 ------------
 
 - Doesn't work with headers.
-- It does undo the changes to the compile options afterwards but the project file will still have a new empty entry for that file added if you save it.
 
 
 TODO
 ----
-- cleanup!
 - better methods for finding the correct spot in the generated file
-- prevent pollution of project file by finding a working undo mechanism
 - RunToCursor functionality with ignoring breakpoints
 
 

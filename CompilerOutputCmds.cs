@@ -36,7 +36,7 @@ namespace VSPackage.DevUtils
 		private IServiceProvider serviceProvider => package;
 
 		// get the DTE object for this package
-		private EnvDTE80.DTE2 dte => package.dte;
+		private DTE2 dte => package.dte;
 
 		private CompilerOutputCmds(DevUtilsPackage package)
 		{
@@ -214,9 +214,9 @@ namespace VSPackage.DevUtils
 			// TODO: do this in a better way
 			if (mode == 2)
 			{
-				var input = new System.IO.StreamReader(generatedFile);
-				generatedFile = System.IO.Path.GetTempFileName() + ".cpp";
-				var output = new System.IO.StreamWriter(generatedFile);
+				var input = new StreamReader(generatedFile);
+				generatedFile = Path.GetTempFileName() + ".cpp";
+				var output = new StreamWriter(generatedFile);
 
 				while (input.Peek() >= 0)
 				{
@@ -231,7 +231,7 @@ namespace VSPackage.DevUtils
 			// TODO: there are a thousand ways to open a file
 			//			dte.Documents.Open(asmFile, EnvDTE.Constants.vsViewKindCode);
 			//			dte.ExecuteCommand("File.OpenFile", asmFile);
-			Window tmp = dte.ItemOperations.OpenFile(generatedFile, EnvDTE.Constants.vsViewKindCode);
+			Window tmp = dte.ItemOperations.OpenFile(generatedFile, Constants.vsViewKindCode);
 			TextDocument genFileWindow = (TextDocument)tmp.Document.Object("TextDocument");
 
 			// crashes VS
@@ -260,7 +260,7 @@ namespace VSPackage.DevUtils
 
 			// then search for the code line
 			// it might not be there if it's optimized away
-			if (!String.IsNullOrWhiteSpace(curCodeLine))
+			if (!string.IsNullOrWhiteSpace(curCodeLine))
 				textSelObj.FindText(curCodeLine, (int)vsFindOptions.vsFindOptionsMatchCase);
 
 			textSelObj.StartOfLine();
@@ -275,11 +275,11 @@ namespace VSPackage.DevUtils
 				return;
 
 			string altFile = Regex.Replace(origFile, @"\.h(?:pp)?$", ".cpp");
-			if (!System.IO.File.Exists(altFile))
+			if (!File.Exists(altFile))
 			{
 				altFile = Regex.Replace(origFile, @"\.h(?:pp)?$", ".cc");
-				if (!System.IO.File.Exists(altFile))
-					throw new System.Exception("Couldn't find the cpp file corresponding to this header!");
+				if (!File.Exists(altFile))
+					throw new Exception("Couldn't find the cpp file corresponding to this header!");
 			}
 			dte.Documents.Open(altFile, "Text");
 		}

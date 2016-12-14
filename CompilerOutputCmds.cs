@@ -124,8 +124,24 @@ namespace VSPackage.DevUtils
 			// get currently viewed function
 			string functionOfInterest = "";
 			TextSelection selection = tdoc.Selection;
-			CodeElement codeEl = selection.ActivePoint.CodeElement[vsCMElement.vsCMElementFunction];
+			int line = selection.TopPoint.Line;
+			EditPoint editPoint = tdoc.CreateEditPoint();
+			string curCodeLine = editPoint.GetLines(line, line + 1);
 
+			// search surrounding lines
+			if (string.IsNullOrWhiteSpace(curCodeLine))
+			{
+				++line;
+				curCodeLine = editPoint.GetLines(line, line + 1);
+				if (string.IsNullOrWhiteSpace(curCodeLine))
+				{
+					line -= 2;
+					curCodeLine = editPoint.GetLines(line, line + 1);
+				}
+				selection.GotoLine(line, true);
+			}
+
+			CodeElement codeEl = selection.TopPoint.CodeElement[vsCMElement.vsCMElementFunction];
 			if (codeEl == null)
 			{
 				dte.StatusBar.Text = "You should place the cursor inside a function.";
@@ -136,11 +152,6 @@ namespace VSPackage.DevUtils
 			// TODO: in case of a template this gets something like funcName<T>, the assembly contains funcName<actualType>
 			//       it doesn't in the case of macros either, e.g. gets _tmain but in the asm it will be wmain
 
-			// http://www.viva64.com/en/a/0082/#ID0ELOBK
-			// EditPoint directly manipulates text buffer data instead of operating with the text through the editor UI.
-			int line = selection.ActivePoint.Line;
-			EditPoint editPoint = tdoc.CreateEditPoint();
-			string curCodeLine = editPoint.GetLines(line, line + 1);
 			// TODO: comments are removed when preprocessing and thus can't find a line with comments
 
 			// get current configuration
@@ -251,7 +262,7 @@ namespace VSPackage.DevUtils
 			// first try to find the function
 			// TODO: for some reason vsFindOptions.vsFindOptionsFromStart option doesn't work
 			textSelObj.StartOfDocument();
-			bool res = textSelObj.FindText("; " + functionOfInterest, (int)vsFindOptions.vsFindOptionsMatchCase);
+			bool res = textSelObj.FindText("PROC ; " + functionOfInterest, (int)vsFindOptions.vsFindOptionsMatchCase);
 			if (!res && mode == 1)
 			{
 				dte.StatusBar.Text = "Couldn't find function '" + functionOfInterest + "'";
@@ -261,7 +272,7 @@ namespace VSPackage.DevUtils
 			// then search for the code line
 			// it might not be there if it's optimized away
 			if (!string.IsNullOrWhiteSpace(curCodeLine))
-				textSelObj.FindText(curCodeLine, (int)vsFindOptions.vsFindOptionsMatchCase);
+				textSelObj.FindText(curCodeLine.Trim(), (int)vsFindOptions.vsFindOptionsMatchCase);
 
 			textSelObj.StartOfLine();
 		}

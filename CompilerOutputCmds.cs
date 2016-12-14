@@ -199,6 +199,10 @@ namespace VSPackage.DevUtils
 			_dispBuildEvents_OnBuildProjConfigDoneEventHandler onProjBuildDone = null;
 			onProjBuildDone = (project, projectConfig, platfrm, solutionConfig, success) =>
 			{
+				// Unique name is project name including solution folders hierarchy
+				if (project != proj.UniqueName)
+					return;
+
 				dte.Events.BuildEvents.OnBuildProjConfigDone -= onProjBuildDone;
 
 				if (File.Exists(tempCopyPath)) // just to be safe

@@ -183,6 +183,7 @@ namespace VSPackage.DevUtils
 				tool.WholeProgramOptimization = false;
 				tool.AssemblerOutput = Enum.Parse(tool.AssemblerOutput.GetType(), "asmListingAsmSrc");
 				tool.AssemblerListingLocation = generatedFile;
+				tool.WarnAsError = false;
 			}
 			else /*if (mode == 2)*/
 			{

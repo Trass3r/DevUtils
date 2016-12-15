@@ -90,6 +90,7 @@ namespace VSPackage.DevUtils
 			// cases:
 			// normal .cpp in project
 			// external .cpp file => projectItem != null, projectItem.Object == null
+			// stdlib header => projectItem == null
 			// "Solution Files"   => projectItem.Object == null
 			// other file types like .txt or .cs
 
@@ -100,35 +101,71 @@ namespace VSPackage.DevUtils
 			if (projectItem?.Object == null || projectItem.ContainingProject?.Object == null)
 				menuCommand.Enabled = false;
 
+			if (currentFileIsHeaderFile())
+				menuCommand.Enabled = true;
+
 			if (doc.Language != (string) menuCommand.Properties["lang"])
 				menuCommand.Visible = false;
 		}
 
-		// 1: show assembly code for currently open source file
-		// 2: show preprocessed source code
-		private void showCppOutput(int mode = 1)
+		private bool currentFileIsHeaderFile()
 		{
-			// if in a header try to open the cpp file
-			switchToCppFile();
+			string fileName = dte.ActiveDocument.Name;
+			return fileName.EndsWith(".h", StringComparison.OrdinalIgnoreCase) ||
+				fileName.EndsWith(".hpp", StringComparison.OrdinalIgnoreCase) ||
+				!fileName.Contains("."); // stdlib headers
+		}
 
+		// if the current document is an .h file, at least try switching to a potential cpp file of the same name
+		private bool trySwitchToCppFile()
+		{
+			string filePath = dte.ActiveDocument.FullName;
+			string altPath = Path.ChangeExtension(filePath, "cpp");
+			if (!File.Exists(altPath))
+			{
+				altPath = Path.ChangeExtension(filePath, "cc");
+				if (!File.Exists(altPath))
+				{
+					return false;
+				}
+			}
+			dte.Documents.Open(altPath);
+			return true;
+		}
+
+		// helpers for header files
+		private static string _lastFunctionOfInterest;
+		private static string _lastCodeLine;
+
+		private void inspectCurrentCppFile(out string functionOfInterest, out string curCodeLine)
+		{
 			// get the currently active document from the IDE
 			Document doc = dte.ActiveDocument;
 			TextDocument tdoc = doc.Object("TextDocument") as TextDocument;
 
 			if (tdoc == null)
+				throw new Exception("Could not obtain the active TextDocument object");
+
+			// do we want a line found in a previous run?
+			if (_lastCodeLine != null)
 			{
-				package.showMsgBox("Could not obtain the active TextDocument object");
-				return;
+				functionOfInterest = _lastFunctionOfInterest;
+				_lastFunctionOfInterest = null;
+				curCodeLine = _lastCodeLine;
+				_lastCodeLine = null;
+
+				// don't exit if we are still in some header file
+				if (!currentFileIsHeaderFile())
+					return;
 			}
 
-			// get currently viewed function
-			string functionOfInterest = "";
+			// find suitable code line near the cursor
+			// TODO: comments are removed when preprocessing and thus can't find a line with comments
 			TextSelection selection = tdoc.Selection;
 			int line = selection.TopPoint.Line;
 			EditPoint editPoint = tdoc.CreateEditPoint();
-			string curCodeLine = editPoint.GetLines(line, line + 1);
+			curCodeLine = editPoint.GetLines(line, line + 1);
 
-			// search surrounding lines
 			if (string.IsNullOrWhiteSpace(curCodeLine))
 			{
 				++line;
@@ -137,24 +174,46 @@ namespace VSPackage.DevUtils
 				{
 					line -= 2;
 					curCodeLine = editPoint.GetLines(line, line + 1);
+					if (string.IsNullOrWhiteSpace(curCodeLine))
+						throw new Exception("Choose a distinctive line of code inside a function or the function definition itself.");
 				}
 				selection.GotoLine(line, true);
 			}
 
+			// get currently viewed function
+			functionOfInterest = "";
 			CodeElement codeEl = selection.TopPoint.CodeElement[vsCMElement.vsCMElementFunction];
-			if (codeEl == null)
+			if (codeEl != null)
+				functionOfInterest = codeEl.FullName;
+			else
 			{
-				dte.StatusBar.Text = "You should place the cursor inside a function.";
+				dte.StatusBar.Text = "Warning: could not get function object from the IDE.";
 				dte.StatusBar.Highlight(true);
 			}
-			else
-				functionOfInterest = codeEl.FullName;
+
 			// TODO: in case of a template this gets something like funcName<T>, the assembly contains funcName<actualType>
 			//       it doesn't in the case of macros either, e.g. gets _tmain but in the asm it will be wmain
 
-			// TODO: comments are removed when preprocessing and thus can't find a line with comments
+			// now that we extracted the function of interest handle the header file case
+			if (currentFileIsHeaderFile() && !trySwitchToCppFile())
+			{
+				_lastFunctionOfInterest = functionOfInterest;
+				_lastCodeLine = curCodeLine;
+
+				throw new Exception("Please open a cpp file calling this code and re-run.");
+			}
+		}
+
+		// 1: show assembly code for currently open source file
+		// 2: show preprocessed source code
+		private void showCppOutput(int mode = 1)
+		{
+			string functionOfInterest;
+			string curCodeLine;
+			inspectCurrentCppFile(out functionOfInterest, out curCodeLine);
 
 			// get current configuration
+			Document doc = dte.ActiveDocument;
 			Project proj = doc.ProjectItem.ContainingProject;
 			ConfigurationManager mgr = proj.ConfigurationManager;
 			string platform = mgr.ActiveConfiguration.PlatformName;
@@ -259,7 +318,7 @@ namespace VSPackage.DevUtils
 
 			// if it's a template the fullName will be like ns::bar<T>
 			// try to find an instantiation instead then
-			int bracketPos = functionOfInterest.IndexOf("<");
+			int bracketPos = functionOfInterest.IndexOf("<", StringComparison.Ordinal);
 			if (bracketPos > 0)
 				functionOfInterest = functionOfInterest.Substring(0, bracketPos + 1);
 
@@ -280,24 +339,6 @@ namespace VSPackage.DevUtils
 				textSelObj.FindText(curCodeLine.Trim(), (int)vsFindOptions.vsFindOptionsMatchCase);
 
 			textSelObj.StartOfLine();
-		}
-
-		/// if the current document is an .h file, at least try switching to a potential cpp file of the same name
-		public void switchToCppFile()
-		{
-			DTE2 dte = this.dte;
-			string origFile = dte.ActiveDocument.FullName;
-			if (!Regex.IsMatch(origFile, @"\.h(?:pp)?$"))
-				return;
-
-			string altFile = Regex.Replace(origFile, @"\.h(?:pp)?$", ".cpp");
-			if (!File.Exists(altFile))
-			{
-				altFile = Regex.Replace(origFile, @"\.h(?:pp)?$", ".cc");
-				if (!File.Exists(altFile))
-					throw new Exception("Couldn't find the cpp file corresponding to this header!");
-			}
-			dte.Documents.Open(altFile, "Text");
 		}
 
 		// callback: show decompiled C# code

@@ -14,12 +14,7 @@ This may not be correct if you are in a template function and want to see the as
 
 Download
 --------
-https://visualstudiogallery.msdn.microsoft.com/62f485b0-b659-4852-8f39-885c20c9fcd1
-
-Known issues
-------------
-
-- Doesn't work with headers.
+https://marketplace.visualstudio.com/vsgallery/62f485b0-b659-4852-8f39-885c20c9fcd1
 
 
 TODO

@@ -1,9 +1,9 @@
-﻿using EnvDTE;
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Shell;
+using EnvDTE;
 
-namespace VSPackage.DevUtils
+namespace DevUtils
 {
 	internal class BuildEventsHandler
 	{

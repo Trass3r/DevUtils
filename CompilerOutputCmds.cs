@@ -4,13 +4,12 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Process = System.Diagnostics.Process;
 
-namespace VSPackage.DevUtils
+namespace DevUtils
 {
 	/// <summary>
 	/// Command Group dealing with compiler generated outputs

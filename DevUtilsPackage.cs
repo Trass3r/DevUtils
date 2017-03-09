@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Shell;
 using EnvDTE;
 using EnvDTE80;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
-namespace VSPackage.DevUtils
+namespace DevUtils
 {
 	/// <summary>
 	/// This is the class that implements the package exposed by this assembly.

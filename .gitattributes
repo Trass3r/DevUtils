@@ -1,5 +1,6 @@
 # later rules override previous ones
 * text=auto
 
-*.sln  eol=crlf
 *.sh   eol=lf
+*.cs   text diff=csharp
+*.cpp  text diff=cpp

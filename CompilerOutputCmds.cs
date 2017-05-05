@@ -98,7 +98,10 @@ namespace DevUtils
 			// first check if it's part of a project
 			ProjectItem projectItem = doc.ProjectItem;
 			if (projectItem?.Object == null || projectItem.ContainingProject?.Object == null)
+			{
 				menuCommand.Enabled = false;
+				package.writeStatus("This file is not recognized as part of any project");
+			}
 
 			if (currentFileIsHeaderFile())
 				menuCommand.Enabled = true;

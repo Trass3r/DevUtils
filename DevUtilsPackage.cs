@@ -34,6 +34,7 @@ namespace DevUtils
 	{
 		public const string GUID = "19b8a882-47f2-4fdd-a657-5f15a2c5ecae";
 		private BuildEventsHandler _buildEventsHandler;
+		private IVsStatusbar _statusBar;
 
 		/// <summary>
 		/// Default constructor of the package.
@@ -69,6 +70,7 @@ namespace DevUtils
 			await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
 			dte = await GetServiceAsync(typeof(DTE)) as DTE2;
+			_statusBar = await GetServiceAsync(typeof(SVsStatusbar)) as IVsStatusbar;
 
 			_buildEventsHandler = new BuildEventsHandler(this);
 			CompilerOutputCmds.Initialize(this);
@@ -88,14 +90,11 @@ namespace DevUtils
 
 		public void writeStatus(string msg)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			IVsStatusbar sb = (IVsStatusbar) GetService(typeof(SVsStatusbar));
-			sb.SetColorText(msg, 0, 0);
+			_statusBar.SetColorText(msg, 0, 0);
 		}
 
 		public void writeToBuildWindow(string msg)
 		{
-			DTE2 dte = (DTE2)GetService(typeof(DTE));
 			var win = dte.Windows.Item(EnvDTE.Constants.vsWindowKindOutput);
 			var ow = win.Object as OutputWindow;
 			if (ow == null)

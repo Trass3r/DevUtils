@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
-using System.Globalization;
+﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Task = System.Threading.Tasks.Task;
 
 namespace DevUtils
 {
@@ -20,16 +21,16 @@ namespace DevUtils
 	/// </summary>
 	// This attribute tells the PkgDef creation utility (CreatePkgDef.exe) that this class is
 	// a package.
-	[PackageRegistration(UseManagedResourcesOnly = true)]
+	[PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 	// This attribute is used to register the information needed to show this package
 	// in the Help/About dialog of Visual Studio.
 	[InstalledProductRegistration("#110", "#112", "0.6.0", IconResourceID = 400)]
 	// This attribute is needed to let the shell know that this package exposes some menus.
 	[ProvideMenuResource("Menus.ctmenu", 1)]
 	// automatic module initialization when opening a solution file
-	[ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+	[ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
 	[Guid(DevUtilsPackage.GUID)]
-	internal sealed class DevUtilsPackage : Package
+	internal sealed class DevUtilsPackage : AsyncPackage
 	{
 		public const string GUID = "19b8a882-47f2-4fdd-a657-5f15a2c5ecae";
 		private BuildEventsHandler _buildEventsHandler;
@@ -48,7 +49,11 @@ namespace DevUtils
 		// get the DTE object for this package
 		// retrieving it in Package.Initialize is buggy cause the IDE might not be fully initialized then -.-
 		// and it's not worth the hassle registering for ready events
-		internal EnvDTE80.DTE2 dte => (EnvDTE80.DTE2)GetService(typeof(EnvDTE.DTE));
+		internal DTE2 dte
+		{
+			get;
+			set;
+		}
 
 		/////////////////////////////////////////////////////////////////////////////
 		// Overridden Package Implementation
@@ -58,13 +63,14 @@ namespace DevUtils
 		/// Initialization of the package; this method is called right after the package is sited, so this is the place
 		/// where you can put all the initialization code that rely on services provided by VisualStudio.
 		/// </summary>
-		protected override void Initialize()
+		protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
 		{
-			Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
-			base.Initialize();
+			// switch to the UI thread for command initialization
+			await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+			dte = await GetServiceAsync(typeof(DTE)) as DTE2;
 
 			_buildEventsHandler = new BuildEventsHandler(this);
-
 			CompilerOutputCmds.Initialize(this);
 		}
 		#endregion

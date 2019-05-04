@@ -6,7 +6,7 @@ This Visual Studio extension adds some convenience features I missed for C++ and
 - adds editor context menu items for inspecting the C++ preprocessor and code generator output resp. C# disassembly via ILSpy
 - taskbar progress visualization and total solution build time
 
-In conjunction with an assembler syntax highlighting extension like AsmHighlighter this provides an easy way to optimize code or figure out preprocessor issues.
+In conjunction with an assembler syntax highlighting extension like AsmDude this provides an easy way to optimize code or figure out preprocessor issues.
 
 It strives to jump to the correct place in the generated output file if possible.
 This may not be correct if you are in a template function and want to see the assembly or the cursor is placed on a line using macros and preprocessed output is desired.

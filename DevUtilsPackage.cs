@@ -66,11 +66,11 @@ namespace DevUtils
 		/// </summary>
 		protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
 		{
-			// switch to the UI thread for command initialization
-			await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-
 			dte = await GetServiceAsync(typeof(DTE)) as DTE2;
 			_statusBar = await GetServiceAsync(typeof(SVsStatusbar)) as IVsStatusbar;
+
+			// switch to the UI thread for command initialization
+			await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
 			_buildEventsHandler = new BuildEventsHandler(this);
 			CompilerOutputCmds.Initialize(this);
